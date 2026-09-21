@@ -18,7 +18,16 @@ export interface Member {
   no_hp: string;
   pin: string;
   total_poin: number;
+  referral_code: string | null;
+  referred_by_id: number | null;
   stores?: { nama_toko: string }; // Relasi
+  referrer?: { nama: string } | null; // Join untuk nama pengajak
+}
+
+export interface ReferralSettings {
+  id: number;
+  bonus_points_for_referrer: number;
+  bonus_points_for_new_member: number;
 }
 
 export interface Voucher {
