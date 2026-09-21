@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { Sidebar } from "@/components/layouts/Sidebar";
-import { LayoutDashboard, Users, QrCode, UserPlus, Settings, Gift, History } from "lucide-react";
+import { LayoutDashboard, Users, QrCode, UserPlus, Settings, Gift, History, CalendarCheck } from "lucide-react";
 import HistoryView from "@/components/HistoryView"; 
 
 // Import Views
@@ -13,6 +13,7 @@ import { RegisterView } from "@/components/RegisterView";
 import MemberListView from "@/components/MemberListView"; 
 import SettingsView from "@/components/SettingsView";
 import { ValidatorView } from "@/components/views/kasir/ValidatorView";
+import { CheckinSettingsView } from "@/components/views/kasir/CheckinSettingsView";
 
 function KasirContent() {
   const { session, logout } = useAuth('staff');
@@ -32,14 +33,10 @@ function KasirContent() {
     { id: 'pos', label: 'Transaksi Poin', icon: <QrCode size={20} /> },
     { id: 'validator', label: 'Validasi Voucher', icon: <Gift size={20} /> },
     { id: 'dashboard', label: 'Ringkasan', icon: <LayoutDashboard size={20} /> },
-
-    // ===========================
-    // 🔥 MENU BARU (RIWAYAT TOKO)
-    // ===========================
     { id: 'history', label: 'Riwayat Toko', icon: <History size={20} /> },
-
     { id: 'register', label: 'Registrasi Member', icon: <UserPlus size={20} /> },
     { id: 'members', label: 'Data Pelanggan', icon: <Users size={20} /> },
+    { id: 'checkin_settings', label: 'Pengaturan Check-in', icon: <CalendarCheck size={20} /> },
     { id: 'settings', label: 'Akun Saya', icon: <Settings size={20} /> },
   ];
 
@@ -71,6 +68,7 @@ function KasirContent() {
           {activeMenu === 'register' && <RegisterView />}
           {activeMenu === 'members' && <MemberListView storeId={session.storeId} />}
           {activeMenu === 'history' && <HistoryView storeId={session.storeId} />}
+          {activeMenu === 'checkin_settings' && <CheckinSettingsView />}
           {activeMenu === 'settings' && <SettingsView session={session} />}
 
         </div>
