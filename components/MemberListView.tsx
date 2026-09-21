@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { hashData } from "@/lib/security"; // Untuk Enkripsi PIN Baru
-import { Search, Smartphone, Edit, Trash2, X, Save } from "lucide-react";
+import { Search, Smartphone, Edit, Trash2, X, Save, Users } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 
@@ -21,7 +21,7 @@ export default function MemberListView({ storeId }: { storeId: number | null }) 
     setLoading(true);
     const { data } = await supabase
       .from("members")
-      .select("*, stores(nama_toko)")
+      .select("*, stores(nama_toko), referrer:members!referred_by_id(nama)")
       .eq("store_id", storeId)
       .order("created_at", { ascending: false });
     if (data) setMembers(data);
@@ -94,6 +94,7 @@ export default function MemberListView({ storeId }: { storeId: number | null }) 
               <th className="p-4">Nama</th>
               <th className="p-4">No HP</th>
               <th className="p-4">Poin</th>
+              <th className="p-4">Diajak Oleh</th>
               <th className="p-4 text-right">Aksi</th>
             </tr>
           </thead>
@@ -103,6 +104,13 @@ export default function MemberListView({ storeId }: { storeId: number | null }) 
                 <td className="p-4 font-bold text-slate-700">{m.nama}</td>
                 <td className="p-4 text-slate-500 flex items-center gap-2"><Smartphone size={14}/> {m.no_hp}</td>
                 <td className="p-4 font-black text-indigo-600">{m.total_poin}</td>
+                <td className="p-4 text-slate-500 text-sm">
+                  {m.referrer?.nama ? (
+                    <span className="flex items-center gap-1 text-emerald-600 font-medium"><Users size={14}/> {m.referrer.nama}</span>
+                  ) : (
+                    <span className="text-slate-300">—</span>
+                  )}
+                </td>
                 <td className="p-4 text-right flex justify-end gap-2">
                     <button onClick={()=>handleEdit(m)} className="p-2 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100"><Edit size={16}/></button>
                     <button onClick={()=>handleDelete(m.id)} className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100"><Trash2 size={16}/></button>
