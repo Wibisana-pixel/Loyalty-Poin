@@ -119,7 +119,7 @@ export default function MemberPage() {
         )}
 
         {/* HEADER */}
-        <div className="bg-slate-900 text-white pt-10 pb-20 px-6 rounded-b-[2.5rem] shadow-lg relative z-20">
+        <div className="bg-slate-900 text-white pt-10 pb-20 px-6 rounded-b-[2.5rem] shadow-lg relative z-10">
           <div className="flex justify-between items-start">
             <div className="flex gap-4 items-center">
               <button onClick={() => setIsMenuOpen(true)} className="bg-slate-800 p-2.5 rounded-xl hover:bg-slate-700 text-white transition border border-slate-700 shadow-md">
@@ -145,7 +145,7 @@ export default function MemberPage() {
         </div>
 
         {/* CONTENT */}
-        <div className="flex-1 px-5 -mt-14 pb-10 z-10 overflow-y-auto">
+        <div className="flex-1 px-5 -mt-14 pb-10 z-20 relative overflow-y-auto">
           {activeTab === 'home' ? (
             <>
               {/* KARTU SALDO */}
