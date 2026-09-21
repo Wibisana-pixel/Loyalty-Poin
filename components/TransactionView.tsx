@@ -45,7 +45,7 @@ export default function TransactionView({ session }: any) {
         setBelanja("");
         
         // Cek Member (Global, tanpa filter store_id agar member lintas cabang bisa belanja)
-        const { data, error } = await supabase.from('members').select('*').eq('no_hp', hp).single();
+        const { data, error } = await supabase.from('members').select('*, referred_by_id').eq('no_hp', hp).single();
         
         if (data) setMemberData(data);
         setLoadingCari(false);
@@ -58,23 +58,94 @@ export default function TransactionView({ session }: any) {
         }
         setLoadingSimpan(true);
         
-        const newTotalPoin = memberData.total_poin + poin;
-        
-        // Update Poin Member
-        await supabase.from('members').update({ total_poin: newTotalPoin }).eq('id', memberData.id);
-        
-        // Catat Transaksi
-        await supabase.from('transactions').insert([{ 
-            member_id: memberData.id, 
-            type: 'earning', 
-            amount: poin, 
-            description: `Belanja Rp ${parseInt(belanja).toLocaleString()}`, 
-            store_id: session.storeId // Catat transaksi terjadi di toko ini
-        }]);
-        
-        setMemberData({ ...memberData, total_poin: newTotalPoin });
-        setLoadingSimpan(false); 
-        setShowSuccess(true);
+        try {
+            const newTotalPoin = memberData.total_poin + poin;
+            
+            // Update Poin Member
+            await supabase.from('members').update({ total_poin: newTotalPoin }).eq('id', memberData.id);
+            
+            // Catat Transaksi Belanja
+            await supabase.from('transactions').insert([{ 
+                member_id: memberData.id, 
+                type: 'earning', 
+                amount: poin, 
+                description: `Belanja Rp ${parseInt(belanja).toLocaleString()}`, 
+                store_id: session.storeId
+            }]);
+
+            // ============================================
+            // LOGIKA BONUS REFERRAL (TRANSAKSI PERTAMA)
+            // ============================================
+            if (memberData.referred_by_id) {
+                // Cek apakah ini transaksi pertama (sebelum transaksi ini, belum ada riwayat)
+                const { count } = await supabase
+                    .from('transactions')
+                    .select('id', { count: 'exact', head: true })
+                    .eq('member_id', memberData.id)
+                    .eq('type', 'earning');
+                
+                // count === 1 berarti hanya transaksi yang baru saja dimasukkan di atas
+                if (count === 1) {
+                    // Ambil pengaturan referral
+                    const { data: refSettings } = await supabase
+                        .from('referral_settings')
+                        .select('*')
+                        .limit(1)
+                        .single();
+
+                    if (refSettings) {
+                        const bonusNewMember = refSettings.bonus_points_for_new_member || 0;
+                        const bonusReferrer = refSettings.bonus_points_for_referrer || 0;
+
+                        // --- Bonus untuk Member Baru ---
+                        if (bonusNewMember > 0) {
+                            const updatedPoin = newTotalPoin + bonusNewMember;
+                            await supabase.from('members').update({ total_poin: updatedPoin }).eq('id', memberData.id);
+                            await supabase.from('transactions').insert([{
+                                member_id: memberData.id,
+                                type: 'earning',
+                                amount: bonusNewMember,
+                                description: 'Bonus Referral (Member Baru)',
+                                store_id: session.storeId
+                            }]);
+                            // Update local data agar modal success menampilkan poin terbaru
+                            memberData.total_poin = updatedPoin;
+                        }
+
+                        // --- Bonus untuk Pengajak ---
+                        if (bonusReferrer > 0) {
+                            const { data: referrer } = await supabase
+                                .from('members')
+                                .select('id, total_poin')
+                                .eq('id', memberData.referred_by_id)
+                                .single();
+
+                            if (referrer) {
+                                const referrerNewPoin = referrer.total_poin + bonusReferrer;
+                                await supabase.from('members').update({ total_poin: referrerNewPoin }).eq('id', referrer.id);
+                                await supabase.from('transactions').insert([{
+                                    member_id: referrer.id,
+                                    type: 'earning',
+                                    amount: bonusReferrer,
+                                    description: `Bonus Mengajak Teman (${memberData.nama})`,
+                                    store_id: session.storeId
+                                }]);
+                            }
+                        }
+
+                        toast.success(`🎉 Bonus referral berhasil diberikan!`);
+                    }
+                }
+            }
+
+            setMemberData({ ...memberData, total_poin: memberData.total_poin || newTotalPoin });
+            setLoadingSimpan(false); 
+            setShowSuccess(true);
+        } catch (err: any) {
+            console.error(err);
+            toast.error("Gagal menyimpan transaksi: " + err.message);
+            setLoadingSimpan(false);
+        }
     }
 
     const closeSuccess = () => { 
