@@ -6,12 +6,12 @@ import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import toast from "react-hot-toast";
 import { hashData } from "@/lib/security"; 
-import { UserPlus, Smartphone, Lock, User, Store } from "lucide-react";
+import { UserPlus, Smartphone, Lock, User, Store, Gift } from "lucide-react";
 
 export function RegisterView() {
   const { session } = useAuth(); // Ambil data sesi (termasuk storeId)
   const [loading, setLoading] = useState(false);
-  const [form, setForm] = useState({ nama: "", hp: "", pin: "" });
+  const [form, setForm] = useState({ nama: "", hp: "", pin: "", referralCode: "" });
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,9 +31,7 @@ export function RegisterView() {
     }
 
     try {
-      // 1. Cek duplikasi di Toko INI (Bukan global, karena member bisa daftar di cabang beda)
-      // Tapi untuk simplifikasi, biasanya 1 No HP = 1 Akun Global. 
-      // Di V2.1 ini kita buat 1 No HP UNIK secara global agar tidak bingung.
+      // 1. Cek duplikasi No HP
       const { data: existing } = await supabase
         .from("members")
         .select("id")
@@ -46,24 +44,52 @@ export function RegisterView() {
         return;
       }
 
-      // 2. Enkripsi PIN
+      // 2. Validasi kode referral jika diisi
+      let referrerId: number | null = null;
+
+      if (form.referralCode.trim()) {
+        const { data: referrer } = await supabase
+          .from("members")
+          .select("id")
+          .eq("referral_code", form.referralCode.trim().toUpperCase())
+          .single();
+
+        if (!referrer) {
+          alert("❌ Kode Referral tidak ditemukan! Periksa kembali kodenya.");
+          setLoading(false);
+          return;
+        }
+
+        referrerId = referrer.id;
+      }
+
+      // 3. Enkripsi PIN
       const hashedPin = await hashData(form.pin);
 
-      // 3. Simpan dengan STORE ID (ISOLASI DATA)
-      const { error } = await supabase.from("members").insert([
-        {
-          nama: form.nama,
-          no_hp: form.hp,
-          pin: hashedPin, 
-          store_id: session.storeId, // <--- KUNCI ISOLASI: Simpan ID Toko Kasir
-          total_poin: 0
-        },
-      ]);
+      // 4. Simpan member baru dengan STORE ID & REFERRAL
+      const insertData: any = {
+        nama: form.nama,
+        no_hp: form.hp,
+        pin: hashedPin, 
+        store_id: session.storeId,
+        total_poin: 0,
+      };
+
+      // Set referred_by_id jika ada kode referral valid
+      if (referrerId) {
+        insertData.referred_by_id = referrerId;
+      }
+
+      const { error } = await supabase.from("members").insert([insertData]);
 
       if (error) throw error;
 
-      alert(`✅ Member berhasil didaftarkan di ${session.storeName}!`);
-      setForm({ nama: "", hp: "", pin: "" });
+      const successMsg = referrerId 
+        ? `✅ Member berhasil didaftarkan di ${session.storeName} dengan referral!`
+        : `✅ Member berhasil didaftarkan di ${session.storeName}!`;
+      
+      alert(successMsg);
+      setForm({ nama: "", hp: "", pin: "", referralCode: "" });
 
     } catch (err: any) {
       console.error(err);
@@ -120,6 +146,20 @@ export function RegisterView() {
                 placeholder="Min. 4 Angka"
                 className="pl-10"
             />
+        </div>
+
+        {/* Input Kode Referral (Opsional) */}
+        <div className="relative">
+            <Gift className="absolute top-9 left-3 text-slate-400" size={18}/>
+            <Input 
+                label="Kode Referral (Opsional)" 
+                type="text"
+                value={form.referralCode} 
+                onChange={(e: any) => setForm({...form, referralCode: e.target.value})} 
+                placeholder="Contoh: BUD1234"
+                className="pl-10"
+            />
+            <p className="text-[10px] text-slate-400 mt-1 ml-1">Kosongkan jika tidak ada kode referral</p>
         </div>
 
         <Button type="submit" isLoading={loading} className="w-full mt-4 py-4">
