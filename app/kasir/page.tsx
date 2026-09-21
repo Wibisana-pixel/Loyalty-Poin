@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { Sidebar } from "@/components/layouts/Sidebar";
-import { LayoutDashboard, Users, QrCode, UserPlus, Settings, Gift, History, CalendarCheck } from "lucide-react";
+import { LayoutDashboard, Users, QrCode, UserPlus, Settings, Gift, History, CalendarCheck, UsersRound } from "lucide-react";
 import HistoryView from "@/components/HistoryView"; 
 
 // Import Views
@@ -14,6 +14,7 @@ import MemberListView from "@/components/MemberListView";
 import SettingsView from "@/components/SettingsView";
 import { ValidatorView } from "@/components/views/kasir/ValidatorView";
 import { CheckinSettingsView } from "@/components/views/kasir/CheckinSettingsView";
+import { ReferralSettingsView } from "@/components/views/kasir/ReferralSettingsView";
 
 function KasirContent() {
   const { session, logout } = useAuth('staff');
@@ -37,6 +38,7 @@ function KasirContent() {
     { id: 'register', label: 'Registrasi Member', icon: <UserPlus size={20} /> },
     { id: 'members', label: 'Data Pelanggan', icon: <Users size={20} /> },
     { id: 'checkin_settings', label: 'Pengaturan Check-in', icon: <CalendarCheck size={20} /> },
+    { id: 'referral_settings', label: 'Pengaturan Referral', icon: <UsersRound size={20} /> },
     { id: 'settings', label: 'Akun Saya', icon: <Settings size={20} /> },
   ];
 
@@ -69,6 +71,7 @@ function KasirContent() {
           {activeMenu === 'members' && <MemberListView storeId={session.storeId} />}
           {activeMenu === 'history' && <HistoryView storeId={session.storeId} />}
           {activeMenu === 'checkin_settings' && <CheckinSettingsView />}
+          {activeMenu === 'referral_settings' && <ReferralSettingsView />}
           {activeMenu === 'settings' && <SettingsView session={session} />}
 
         </div>
