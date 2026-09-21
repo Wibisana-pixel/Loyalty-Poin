@@ -49,3 +49,18 @@ export interface Store {
   nama_toko: string;
   alamat: string | null;
 }
+
+export interface CheckinReward {
+  id: number;
+  day_number: number;
+  reward_points: number;
+  description: string;
+  created_at: string;
+}
+
+export interface MemberCheckin {
+  id: number;
+  member_id: number;
+  total_days: number;
+  last_checkin_date: string;
+}
