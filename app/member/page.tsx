@@ -2,9 +2,10 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
-import { Loader2, LogOut, User, Wallet, Menu, X, Home, CalendarCheck } from "lucide-react";
+import { Loader2, LogOut, User, Wallet, Menu, X, Home, CalendarCheck, Users } from "lucide-react";
 import { RewardView } from "@/components/views/member/RewardView";
 import { CheckinView } from "@/components/views/member/CheckinView";
+import { ReferralView } from "@/components/views/member/ReferralView";
 import { MEMBER_SESSION_KEY } from "@/lib/constants";
 import toast from "react-hot-toast"; // Import Toast
 
@@ -13,6 +14,8 @@ interface MemberData {
   id: number;
   nama: string;
   total_poin: number;
+  referral_code: string | null;
+  referred_by_id: number | null;
   stores?: { nama_toko: string };
 }
 
@@ -20,7 +23,7 @@ export default function MemberPage() {
   const router = useRouter();
   const [member, setMember] = useState<MemberData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'home' | 'checkin'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'checkin' | 'referral'>('home');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   // 1. Fetch Member
@@ -113,6 +116,12 @@ export default function MemberPage() {
                 >
                   <CalendarCheck size={20} /> Check-in Harian
                 </button>
+                <button 
+                  onClick={() => { setActiveTab('referral'); setIsMenuOpen(false); }}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition ${activeTab === 'referral' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:bg-slate-800'}`}
+                >
+                  <Users size={20} /> Ajak Teman
+                </button>
               </div>
             </div>
           </div>
@@ -164,8 +173,10 @@ export default function MemberPage() {
 
               <RewardView member={member} onUpdate={() => fetchMember(member.id)} />
             </>
-          ) : (
+          ) : activeTab === 'checkin' ? (
             <CheckinView member={member} onUpdate={() => fetchMember(member.id)} />
+          ) : (
+            <ReferralView member={member} onUpdate={() => fetchMember(member.id)} />
           )}
         </div>
       </div>
