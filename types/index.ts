@@ -20,6 +20,7 @@ export interface Member {
   total_poin: number;
   referral_code: string | null;
   referred_by_id: number | null;
+  last_reset_date?: string | null; // Untuk misi mingguan
   stores?: { nama_toko: string }; // Relasi
   referrer?: { nama: string } | null; // Join untuk nama pengajak
 }
@@ -72,4 +73,24 @@ export interface MemberCheckin {
   member_id: number;
   total_days: number;
   last_checkin_date: string;
+}
+
+export interface Quest {
+  id: number;
+  name: string;
+  description: string;
+  target_count: number;
+  reward_points: number;
+  is_active: boolean;
+  created_at?: string;
+}
+
+export interface MemberQuest {
+  id: number;
+  member_id: number;
+  quest_id: number;
+  current_progress: number;
+  is_completed: boolean;
+  created_at?: string;
+  quests?: Quest; // Relasi
 }
