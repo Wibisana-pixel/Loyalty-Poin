@@ -138,6 +138,36 @@ export default function TransactionView({ session }: any) {
                 }
             }
 
+            // ============================================
+            // LOGIKA UPDATE MISI MINGGUAN
+            // ============================================
+            try {
+                // 1. Ambil misi yang aktif
+                const { data: activeQuests } = await supabase.from('quests').select('*').eq('is_active', true);
+                if (activeQuests && activeQuests.length > 0) {
+                    // 2. Ambil progres member saat ini
+                    const { data: memberQuests } = await supabase.from('member_quests').select('*').eq('member_id', memberData.id);
+                    
+                    for (const quest of activeQuests) {
+                        const existingMq = memberQuests?.find((mq: any) => mq.quest_id === quest.id);
+                        if (existingMq) {
+                            if (!existingMq.is_completed) {
+                                await supabase.from('member_quests').update({ current_progress: existingMq.current_progress + 1 }).eq('id', existingMq.id);
+                            }
+                        } else {
+                            await supabase.from('member_quests').insert([{
+                                member_id: memberData.id,
+                                quest_id: quest.id,
+                                current_progress: 1,
+                                is_completed: false
+                            }]);
+                        }
+                    }
+                }
+            } catch (questErr) {
+                console.error("Gagal update progres misi:", questErr);
+            }
+
             setMemberData({ ...memberData, total_poin: memberData.total_poin || newTotalPoin });
             setLoadingSimpan(false); 
             setShowSuccess(true);
