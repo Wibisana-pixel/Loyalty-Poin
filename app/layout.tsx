@@ -10,7 +10,7 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: "Nexyuspay",
+  title: "Nexyuspay Loyality",
   description: "Sistem Poin & Member",
 };
 
