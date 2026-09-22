@@ -115,7 +115,7 @@ export default function UnifiedLoginPage() {
         <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 inline-flex mb-4">
             <Store className="text-indigo-600" size={32} />
         </div>
-        <h1 className="text-2xl font-bold tracking-tight">Bolu Kukus Loyalty</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Nexyuspay Loyality</h1>
         <p className="text-slate-500 text-sm mt-1">Kesetiaan pelanggan adalah rahasia di balik rasa bahagia.</p>
       </div>
 
