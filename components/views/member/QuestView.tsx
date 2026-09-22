@@ -6,7 +6,7 @@ import { Target, Gift, Loader2, CheckCircle2 } from "lucide-react";
 import toast from "react-hot-toast";
 
 interface QuestViewProps {
-  member: Member;
+  member: any;
   onUpdate: () => void;
 }
 
