@@ -2,10 +2,11 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
-import { Loader2, LogOut, User, Wallet, Menu, X, Home, CalendarCheck, Users } from "lucide-react";
+import { Loader2, LogOut, User, Wallet, Menu, X, Home, CalendarCheck, Users, Target } from "lucide-react";
 import { RewardView } from "@/components/views/member/RewardView";
 import { CheckinView } from "@/components/views/member/CheckinView";
 import { ReferralView } from "@/components/views/member/ReferralView";
+import { QuestView } from "@/components/views/member/QuestView";
 import { MEMBER_SESSION_KEY } from "@/lib/constants";
 import toast from "react-hot-toast"; // Import Toast
 
@@ -23,7 +24,7 @@ export default function MemberPage() {
   const router = useRouter();
   const [member, setMember] = useState<MemberData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'home' | 'checkin' | 'referral'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'checkin' | 'referral' | 'quests'>('home');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   // 1. Fetch Member
@@ -122,6 +123,12 @@ export default function MemberPage() {
                 >
                   <Users size={20} /> Ajak Teman
                 </button>
+                <button 
+                  onClick={() => { setActiveTab('quests'); setIsMenuOpen(false); }}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition ${activeTab === 'quests' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:bg-slate-800'}`}
+                >
+                  <Target size={20} /> Misi Mingguan
+                </button>
               </div>
             </div>
           </div>
@@ -175,8 +182,10 @@ export default function MemberPage() {
             </>
           ) : activeTab === 'checkin' ? (
             <CheckinView member={member} onUpdate={() => fetchMember(member.id)} />
-          ) : (
+          ) : activeTab === 'referral' ? (
             <ReferralView member={member} onUpdate={() => fetchMember(member.id)} />
+          ) : (
+            <QuestView member={member} onUpdate={() => fetchMember(member.id)} />
           )}
         </div>
       </div>
