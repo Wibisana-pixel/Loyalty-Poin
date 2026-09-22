@@ -29,76 +29,73 @@ export function QuestView({ member, onUpdate }: QuestViewProps) {
     return `${year}-${month}-${date}`;
   };
 
-  const handleResetIfNeeded = useCallback(async () => {
-    const thisWeekMonday = getThisWeekMonday();
-    const lastReset = member.last_reset_date ? member.last_reset_date.split('T')[0] : null;
+  useEffect(() => {
+    let isMounted = true;
 
-    if (lastReset !== thisWeekMonday) {
+    const init = async () => {
+      setLoading(true);
+      
+      const thisWeekMonday = getThisWeekMonday();
+      const lastReset = member.last_reset_date ? member.last_reset_date.split('T')[0] : null;
+
+      // 1. Jalankan Reset Jika Perlu
+      if (lastReset !== thisWeekMonday) {
+        try {
+          await supabase.from("member_quests").update({ current_progress: 0, is_completed: false }).eq("member_id", member.id);
+          await supabase.from("members").update({ last_reset_date: thisWeekMonday }).eq("id", member.id);
+          // Beritahu parent (page.tsx) untuk update data membernya di background
+          // Kita tidak menunggu onUpdate selesai agar UI tidak nge-freeze
+          setTimeout(() => {
+             onUpdate();
+          }, 1000);
+        } catch (error) {
+          console.error("Gagal melakukan reset misi mingguan:", error);
+        }
+      }
+
+      // 2. Fetch Quests
+      if (!isMounted) return;
       try {
-        // Reset member's quests: current_progress = 0, is_completed = false
-        await supabase
+        const { data: questsData, error: questsError } = await supabase
+          .from("quests")
+          .select("*")
+          .eq("is_active", true)
+          .order("id", { ascending: true });
+
+        if (questsError) throw questsError;
+
+        const { data: memberQuestsData, error: mqError } = await supabase
           .from("member_quests")
-          .update({ current_progress: 0, is_completed: false })
+          .select("*")
           .eq("member_id", member.id);
 
-        // Update member's last_reset_date
-        await supabase
-          .from("members")
-          .update({ last_reset_date: thisWeekMonday })
-          .eq("id", member.id);
+        if (mqError) throw mqError;
 
-        // Tell parent to refresh member data so we get the new last_reset_date
-        onUpdate();
-      } catch (error) {
-        console.error("Gagal melakukan reset misi mingguan:", error);
+        if (!isMounted) return;
+
+        const combined = (questsData || []).map((quest: Quest) => {
+          const progress = memberQuestsData?.find((mq: MemberQuest) => mq.quest_id === quest.id);
+          return {
+            ...quest,
+            progress,
+          };
+        });
+
+        setActiveQuests(combined);
+      } catch (error: any) {
+        toast.error(error.message || "Gagal memuat misi mingguan");
+      } finally {
+        if (isMounted) setLoading(false);
       }
-    }
-  }, [member.id, member.last_reset_date, onUpdate]);
-
-  const fetchQuests = useCallback(async () => {
-    setLoading(true);
-    try {
-      // 1. Fetch active quests
-      const { data: questsData, error: questsError } = await supabase
-        .from("quests")
-        .select("*")
-        .eq("is_active", true)
-        .order("id", { ascending: true });
-
-      if (questsError) throw questsError;
-
-      // 2. Fetch member progress
-      const { data: memberQuestsData, error: mqError } = await supabase
-        .from("member_quests")
-        .select("*")
-        .eq("member_id", member.id);
-
-      if (mqError) throw mqError;
-
-      // 3. Combine data
-      const combined = (questsData || []).map((quest: Quest) => {
-        const progress = memberQuestsData?.find((mq: MemberQuest) => mq.quest_id === quest.id);
-        return {
-          ...quest,
-          progress,
-        };
-      });
-
-      setActiveQuests(combined);
-    } catch (error: any) {
-      toast.error(error.message || "Gagal memuat misi mingguan");
-    } finally {
-      setLoading(false);
-    }
-  }, [member.id]);
-
-  useEffect(() => {
-    const init = async () => {
-      await handleResetIfNeeded();
-      await fetchQuests();
     };
+
     init();
-  }, [handleResetIfNeeded, fetchQuests]);
+
+    return () => {
+      isMounted = false;
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [member.id]); // HANYA bergantung pada member.id untuk mencegah infinite loop
 
   const handleClaim = async (quest: Quest & { progress?: MemberQuest }) => {
     if (!quest.progress) return;
@@ -132,8 +129,17 @@ export function QuestView({ member, onUpdate }: QuestViewProps) {
 
       toast.success(`Berhasil klaim ${quest.reward_points} poin!`);
       
-      // Refresh
-      fetchQuests();
+      // Refresh data di komponen ini saja langsung
+      const { data: freshMemberQuests } = await supabase
+        .from("member_quests")
+        .select("*")
+        .eq("member_id", member.id);
+        
+      setActiveQuests(prev => prev.map(q => {
+          const freshProgress = freshMemberQuests?.find((mq: any) => mq.quest_id === q.id);
+          return { ...q, progress: freshProgress || q.progress };
+      }));
+      
       onUpdate();
     } catch (error: any) {
       toast.error(error.message || "Gagal mengklaim misi");
