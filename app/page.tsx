@@ -200,9 +200,23 @@ export default function UnifiedLoginPage() {
         </div>
       </div>
 
-      <p className="mt-8 text-xs text-slate-400 font-medium">
-        {loginMode === "member" ? "Lupa PIN? Hubungi kasir." : "Hanya untuk Staff."}
-      </p>
+      <div className="mt-8 text-center text-xs font-medium">
+        {loginMode === "member" ? (
+          <p className="text-slate-400">
+            Lupa PIN?{" "}
+            <a 
+              href="https://wa.me/6281213126232?text=Halo%20Admin%20Nexyuspay,%20saya%20lupa%20PIN%20akun%20loyalty%20saya.%0A%0AMohon%20bantuannya%20untuk%20reset%20PIN.%0A-%20Nama%20Lengkap%20di%20Akun:%20[Isi Nama]%0A-%20Nomor%20HP/WhatsApp:%20[Isi No HP]" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-indigo-600 hover:text-indigo-700 underline underline-offset-2 transition-colors"
+            >
+              Hubungi Kasir
+            </a>
+          </p>
+        ) : (
+          <p className="text-slate-400">Hanya untuk Staff.</p>
+        )}
+      </div>
     </div>
   );
 }
